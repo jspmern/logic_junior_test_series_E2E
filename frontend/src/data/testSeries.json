@@ -72,7 +72,7 @@
     "questions": 100,
     "difficulty": "Expert",
     "type": "paid",
-    "price": 599,
+    "price": 0,
     "category": "Full Stack",
     "image": "https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=400",
     "topics": ["Node.js", "Express", "Database Design", "API Development", "Authentication"],

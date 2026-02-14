@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Search, Filter, BookOpen, Users, Award, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TestCard from './TestCard';
+import WhyChooseUs from './WhyChooseUs';
+import HowItWorks from './HowItWorks';
+import FAQ from './FAQ';
+import Footer from './Footer';
 
 const Home = ({ testSeries, onSelectTest, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -144,9 +148,9 @@ const Home = ({ testSeries, onSelectTest, user }) => {
       {filteredTests.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTests.map(test => (
-            <TestCard 
-              key={test.testId} 
-              test={test} 
+            <TestCard
+              key={test.testId}
+              test={test}
               onSelect={handleViewDetails}
               user={user}
             />
@@ -163,6 +167,14 @@ const Home = ({ testSeries, onSelectTest, user }) => {
           </p>
         </div>
       )}
+
+      {/* Additional Sections */}
+      <div className="mt-16">
+        <WhyChooseUs />
+        <HowItWorks />
+        <FAQ />
+        <Footer />
+      </div>
     </div>
   );
 };

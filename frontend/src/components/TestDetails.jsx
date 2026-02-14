@@ -5,7 +5,7 @@ import { Clock, FileText, Star, CheckCircle, Crown, ArrowLeft, Play, Target, Awa
 const TestDetails = ({ testSeries, user, onStartTest }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const test = testSeries.find(t => t.id === parseInt(id));
+  const test = testSeries.find(t => t.id.toString() === id);
 
   if (!test) {
     return (
@@ -28,7 +28,7 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
       onStartTest(test);
       return;
     }
-    
+
     if (test.type === 'paid' && !user.purchasedTests?.includes(test.id)) {
       // In a real app, redirect to payment
       alert('This is a paid test. In a real application, you would be redirected to the payment page.');
@@ -51,8 +51,8 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Header Image */}
         <div className="relative h-64">
-          <img 
-            src={test.image} 
+          <img
+            src={test.image}
             alt={test.title}
             className="w-full h-full object-cover"
           />
@@ -75,12 +75,11 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
                     ₹{test.price}
                   </span>
                 )}
-                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white ${
-                  test.difficulty === 'Beginner' ? 'bg-blue-500' :
-                  test.difficulty === 'Intermediate' ? 'bg-orange-500' :
-                  test.difficulty === 'Advanced' ? 'bg-red-500' :
-                  'bg-purple-500'
-                }`}>
+                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white ${test.difficulty === 'Beginner' ? 'bg-blue-500' :
+                    test.difficulty === 'Intermediate' ? 'bg-orange-500' :
+                      test.difficulty === 'Advanced' ? 'bg-red-500' :
+                        'bg-purple-500'
+                  }`}>
                   <Star className="w-4 h-4 mr-1" />
                   {test.difficulty}
                 </span>
@@ -99,12 +98,12 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <div className="font-semibold text-gray-900">{test.duration} mins</div>
+              <div className="font-semibold text-gray-900">{test.time} mins</div>
               <div className="text-sm text-gray-500">Duration</div>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <FileText className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <div className="font-semibold text-gray-900">{test.questions}</div>
+              <div className="font-semibold text-gray-900">{test.totalQuestions}</div>
               <div className="text-sm text-gray-500">Questions</div>
             </div>
             <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -125,7 +124,7 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Topics Covered</h3>
               <div className="flex flex-wrap gap-3">
                 {test.topics.map((topic, index) => (
-                  <span 
+                  <span
                     key={index}
                     className="px-4 py-2 bg-blue-100 text-blue-800 text-sm rounded-full font-medium"
                   >

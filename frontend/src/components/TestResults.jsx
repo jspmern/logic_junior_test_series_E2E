@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Award, Clock, Target, Home, Download } from 'luci
 const TestResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const {
     test,
     questions,
@@ -32,12 +32,13 @@ const TestResults = () => {
     );
   }
 
-  const percentage = Math.round((score / totalMarks) * 100);
+  const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
   const correctAnswers = questions.filter(q => answers[q.id] === q.correct).length;
   const incorrectAnswers = questions.filter(q => answers[q.id] !== undefined && answers[q.id] !== q.correct).length;
   const unanswered = questions.length - Object.keys(answers).length;
 
   const formatTime = (seconds) => {
+    if (isNaN(seconds)) return "0:00";
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
@@ -50,26 +51,28 @@ const TestResults = () => {
     }
   };
 
+  // Determine success based on percentage > 50 directly, overriding passed prop if needed for UI consistency
+  const isSuccessful = percentage > 50;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Results Header */}
-        <div className={`rounded-2xl p-8 mb-8 text-white ${
-          passed ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'
-        }`}>
+        <div className={`rounded-2xl p-8 mb-8 text-white ${isSuccessful ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-red-500 to-red-600'
+          }`}>
           <div className="text-center">
             <div className="mb-4">
-              {passed ? (
+              {isSuccessful ? (
                 <CheckCircle className="w-16 h-16 mx-auto" />
               ) : (
                 <XCircle className="w-16 h-16 mx-auto" />
               )}
             </div>
             <h1 className="text-3xl font-bold mb-2">
-              {passed ? 'Congratulations!' : 'Test Completed'}
+              {isSuccessful ? 'Congratulations!' : 'Test Completed'}
             </h1>
             <p className="text-xl opacity-90 mb-4">
-              {passed ? 'You have successfully passed the test!' : 'Better luck next time!'}
+              {isSuccessful ? 'You have successfully passed the test!' : `Progress ${percentage}%`}
             </p>
             <div className="text-4xl font-bold mb-2">{percentage}%</div>
             <p className="opacity-90">{score} out of {totalMarks} marks</p>
@@ -83,19 +86,19 @@ const TestResults = () => {
             <div className="text-2xl font-bold text-gray-900">{correctAnswers}</div>
             <div className="text-sm text-gray-500">Correct</div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border text-center">
             <XCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900">{incorrectAnswers}</div>
             <div className="text-sm text-gray-500">Incorrect</div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border text-center">
             <Target className="w-8 h-8 text-gray-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900">{unanswered}</div>
             <div className="text-sm text-gray-500">Unanswered</div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border text-center">
             <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900">{formatTime(timeSpent)}</div>
@@ -112,14 +115,14 @@ const TestResults = () => {
             <Home className="w-4 h-4 mr-2" />
             Back to Tests
           </button>
-          
+
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
           >
             View Dashboard
           </button>
-          
+
           {passed && (
             <button
               onClick={handleDownloadCertificate}
@@ -137,14 +140,14 @@ const TestResults = () => {
             <h2 className="text-xl font-semibold text-gray-900">Detailed Results</h2>
             <p className="text-gray-600 mt-1">Review all questions and correct answers</p>
           </div>
-          
+
           <div className="p-6">
             <div className="space-y-8">
               {questions.map((question, index) => {
                 const userAnswer = answers[question.id];
                 const isCorrect = userAnswer === question.correct;
                 const wasAnswered = userAnswer !== undefined;
-                
+
                 return (
                   <div key={question.id} className="border-b border-gray-100 pb-6 last:border-b-0">
                     <div className="flex items-start mb-4">
@@ -155,14 +158,14 @@ const TestResults = () => {
                         <h3 className="text-lg font-medium text-gray-900 mb-4">
                           {question.question}
                         </h3>
-                        
+
                         <div className="space-y-3">
                           {question.options.map((option, optionIndex) => {
                             const isUserAnswer = userAnswer === optionIndex;
                             const isCorrectAnswer = question.correct === optionIndex;
-                            
+
                             let optionClass = 'p-3 rounded-lg border ';
-                            
+
                             if (isCorrectAnswer) {
                               optionClass += 'border-green-500 bg-green-50 text-green-800';
                             } else if (isUserAnswer && !isCorrect) {
@@ -170,7 +173,7 @@ const TestResults = () => {
                             } else {
                               optionClass += 'border-gray-200 bg-gray-50 text-gray-700';
                             }
-                            
+
                             return (
                               <div key={optionIndex} className={optionClass}>
                                 <div className="flex items-center">
@@ -198,7 +201,7 @@ const TestResults = () => {
                             );
                           })}
                         </div>
-                        
+
                         {/* Status and Explanation */}
                         <div className="mt-4 flex items-start justify-between">
                           <div className="flex items-center">
@@ -210,17 +213,17 @@ const TestResults = () => {
                             ) : isCorrect ? (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 <CheckCircle className="w-3 h-3 mr-1" />
-                                Correct (+2 marks)
+                                Correct (+{question.marks} marks)
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 <XCircle className="w-3 h-3 mr-1" />
-                                Incorrect (0 marks)
+                                Incorrect (-{question.negativeMarks} marks)
                               </span>
                             )}
                           </div>
                         </div>
-                        
+
                         {/* Explanation */}
                         {question.explanation && (
                           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
