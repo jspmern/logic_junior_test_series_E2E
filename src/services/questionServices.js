@@ -66,8 +66,8 @@ exports.getQuestionsByCourseIdService = async (filters) => {
       },
     },
     { $sort: { createdAt: -1 } },
-    { $skip: skip },
-    { $limit: parseInt(limit) },
+    // { $skip: skip },
+    // { $limit: parseInt(limit) },
   ];
 
   const [data, countArr] = await Promise.all([

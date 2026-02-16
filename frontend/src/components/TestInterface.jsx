@@ -27,6 +27,10 @@ const TestInterface = ({ testSeries }) => {
         // Fetch questions for this course
         // Note: The backend expects courseId. formatting check might be needed if IDs are complex objects
         const fetchedQuestions = await api.getQuestions(test.id);
+        console.log("Test Configuration:", {
+          testTotalQuestions: test.totalQuestions,
+          questionsLength: fetchedQuestions?.length
+        });
 
         if (fetchedQuestions && Array.isArray(fetchedQuestions)) {
           // Transform backend data to frontend format
@@ -39,7 +43,15 @@ const TestInterface = ({ testSeries }) => {
             marks: q.marks || 1, // Default to 1 if missing
             negativeMarks: q.negativeMarks || 0
           }));
-          setQuestions(formattedQuestions);
+
+          // Shuffle questions
+          const shuffledQuestions = formattedQuestions.sort(() => 0.5 - Math.random());
+
+          // Limit questions to test.totalQuestions (or all if not specified)
+          const questionLimit = test.totalQuestions || shuffledQuestions.length;
+          const selectedQuestions = shuffledQuestions.slice(0, questionLimit);
+
+          setQuestions(selectedQuestions);
         } else {
           setQuestions([]); // No questions found
         }
@@ -183,7 +195,7 @@ const TestInterface = ({ testSeries }) => {
             <div>
               <h1 className="text-xl font-semibold text-gray-900">{test.title}</h1>
               <p className="text-sm text-gray-500">
-                Question {currentQuestion + 1} of {questions.length}
+                Question {currentQuestion + 1} of {test.totalQuestions}
               </p>
             </div>
 
@@ -197,7 +209,7 @@ const TestInterface = ({ testSeries }) => {
 
               {/* Progress */}
               <div className="text-sm text-gray-600">
-                <span className="font-medium">{answeredQuestions}</span>/{questions.length} answered
+                <span className="font-medium">{answeredQuestions}</span>/{test.totalQuestions} answered
               </div>
 
               {/* End Test Button */}
@@ -232,7 +244,7 @@ const TestInterface = ({ testSeries }) => {
                   <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mr-3">
                     Question {currentQuestion + 1}
                   </span>
-                  <span className="text-sm text-gray-500">2 marks</span>
+                  <span className="text-sm text-gray-500">{currentQuestionData.marks} marks</span>
                 </div>
 
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 leading-relaxed">

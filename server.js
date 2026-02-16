@@ -53,7 +53,7 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Routes
-app.use("/health", require("./src/routes/health"));
+app.use("/api", require("./src/routes/health"));
 app.use("/api/auth", require("./src/routes/auth"));
 app.use("/api/categories", require("./src/routes/categories"));
 app.use("/api/courses", require("./src/routes/courses"));

@@ -4,7 +4,7 @@ const categorySchema = new mongoose.Schema({
     name: {
         //TODO:before uncommenting required and unique, make sure to handle existing data
         type: String,
-       // required: [true, 'Category name is required'],
+        // required: [true, 'Category name is required'],
         trim: true,
         //unique: true
     },
@@ -18,6 +18,10 @@ const categorySchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    topics: [{
+        type: String,
+        trim: true
+    }],
     isActive: {
         type: Boolean,
         default: true
@@ -27,7 +31,7 @@ const categorySchema = new mongoose.Schema({
 });
 
 // Create slug from name before saving
-categorySchema.pre('save', function(next) {
+categorySchema.pre('save', function (next) {
     this.slug = this.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '-');
     next();
 });
