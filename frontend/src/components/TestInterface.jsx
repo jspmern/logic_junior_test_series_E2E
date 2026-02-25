@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle, AlertTriangle, ArrowLeft, ArrowRight, Flag } from 'lucide-react';
 import api from '../services/api';
+import QuestionCard from './QuestionCard';
 
 const TestInterface = ({ testSeries }) => {
   const { id } = useParams();
@@ -36,8 +37,12 @@ const TestInterface = ({ testSeries }) => {
           // Transform backend data to frontend format
           const formattedQuestions = fetchedQuestions.map(q => ({
             id: q._id,
-            question: q.questionText,
-            options: q.options.map(o => o.text), // Extract option text
+            questionText: q.questionText,
+            questionImage: q.questionImage,
+            options: q.options.map(o => ({
+              text: o.text,
+              image: o.image
+            })),
             correct: q.options.findIndex(o => o.isCorrect), // Find index of correct option
             explanation: q.explanation?.text || "",
             marks: q.marks || 1, // Default to 1 if missing
@@ -65,6 +70,34 @@ const TestInterface = ({ testSeries }) => {
 
     fetchQuestions();
   }, [test]);
+
+  // Preload images for smoother experience
+  useEffect(() => {
+    if (questions.length === 0) return;
+
+    const preloadImage = (url) => {
+      if (url && typeof url === 'string' && url.trim() !== '') {
+        const img = new Image();
+        img.src = url;
+      }
+    };
+
+    // Preload current question images
+    const currentQ = questions[currentQuestion];
+    if (currentQ) {
+      preloadImage(currentQ.questionImage);
+      currentQ.options.forEach(opt => preloadImage(opt.image));
+    }
+
+    // Preload next 2 questions
+    for (let i = 1; i <= 2; i++) {
+      const nextQ = questions[currentQuestion + i];
+      if (nextQ) {
+        preloadImage(nextQ.questionImage);
+        nextQ.options.forEach(opt => preloadImage(opt.image));
+      }
+    }
+  }, [currentQuestion, questions]);
 
   // Helper to parse time string (e.g., "60 mins" -> 60)
   const parseTime = (timeString) => {
@@ -248,38 +281,14 @@ const TestInterface = ({ testSeries }) => {
                 </div>
 
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 leading-relaxed">
-                  {currentQuestionData.question}
+                  {/* Title or specific header if needed */}
                 </h2>
 
-                <div className="space-y-4">
-                  {currentQuestionData.options.map((option, index) => (
-                    <label
-                      key={index}
-                      className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[currentQuestionData.id] === index
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${currentQuestionData.id}`}
-                        value={index}
-                        checked={answers[currentQuestionData.id] === index}
-                        onChange={() => handleAnswerSelect(currentQuestionData.id, index)}
-                        className="sr-only"
-                      />
-                      <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${answers[currentQuestionData.id] === index
-                        ? 'border-blue-500 bg-blue-500'
-                        : 'border-gray-300'
-                        }`}>
-                        {answers[currentQuestionData.id] === index && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-                      <span className="text-gray-900">{option}</span>
-                    </label>
-                  ))}
-                </div>
+                <QuestionCard
+                  question={currentQuestionData}
+                  selectedAnswer={answers[currentQuestionData.id]}
+                  onAnswerSelect={(index) => handleAnswerSelect(currentQuestionData.id, index)}
+                />
               </div>
 
               {/* Navigation Buttons */}

@@ -156,8 +156,18 @@ const TestResults = () => {
                       </span>
                       <div className="flex-1">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">
-                          {question.question}
+                          {question.questionText}
                         </h3>
+                        {question.questionImage && (
+                          <div className="mb-4">
+                            <img
+                              src={question.questionImage}
+                              alt="Question"
+                              className="max-h-[150px] rounded-lg border border-gray-100 object-contain"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
 
                         <div className="space-y-3">
                           {question.options.map((option, optionIndex) => {
@@ -176,25 +186,38 @@ const TestResults = () => {
 
                             return (
                               <div key={optionIndex} className={optionClass}>
-                                <div className="flex items-center">
-                                  <div className="flex items-center mr-3">
-                                    {isCorrectAnswer && (
-                                      <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
+                                <div className="flex flex-col">
+                                  <div className="flex items-center mb-2">
+                                    <div className="flex items-center mr-3">
+                                      {isCorrectAnswer && (
+                                        <CheckCircle className="w-4 h-4 text-green-600 mr-1" />
+                                      )}
+                                      {isUserAnswer && !isCorrect && (
+                                        <XCircle className="w-4 h-4 text-red-600 mr-1" />
+                                      )}
+                                    </div>
+                                    <span className="font-medium">{option.text}</span>
+                                    {isUserAnswer && (
+                                      <span className="ml-auto text-xs font-medium">
+                                        Your Answer
+                                      </span>
                                     )}
-                                    {isUserAnswer && !isCorrect && (
-                                      <XCircle className="w-4 h-4 text-red-600 mr-1" />
+                                    {isCorrectAnswer && (
+                                      <span className="ml-auto text-xs font-medium">
+                                        Correct Answer
+                                      </span>
                                     )}
                                   </div>
-                                  <span>{option}</span>
-                                  {isUserAnswer && (
-                                    <span className="ml-auto text-xs font-medium">
-                                      Your Answer
-                                    </span>
-                                  )}
-                                  {isCorrectAnswer && (
-                                    <span className="ml-auto text-xs font-medium">
-                                      Correct Answer
-                                    </span>
+
+                                  {option.image && (
+                                    <div className="ml-7">
+                                      <img
+                                        src={option.image}
+                                        alt={`Option ${optionIndex + 1}`}
+                                        className="max-h-[80px] rounded border border-gray-200 object-contain"
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                      />
+                                    </div>
                                   )}
                                 </div>
                               </div>
