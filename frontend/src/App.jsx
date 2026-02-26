@@ -92,7 +92,7 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router basename="/test">
       <div className="min-h-screen bg-gray-50">
         <Navbar user={user} onLogout={handleLogout} onLogin={() => setShowLoginModal(true)} />
         <Routes>

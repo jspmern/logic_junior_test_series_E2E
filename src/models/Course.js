@@ -21,6 +21,12 @@ const courseSchema = new mongoose.Schema(
     time: { type: String, trim: true }, // "60 mins" - Added as per request
     totalMarks: { type: Number, default: 0 },
     totalQuestions: { type: Number, default: 0 },
+    difficulty: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Pro'],
+      default: 'Beginner',
+      trim: true,
+    },
     isPublished: { type: Boolean, default: false },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
