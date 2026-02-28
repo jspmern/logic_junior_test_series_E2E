@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Filter, BookOpen, Users, Award, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, BookOpen, Users, Award, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TestCard from './TestCard';
 import WhyChooseUs from './WhyChooseUs';
@@ -7,12 +7,70 @@ import HowItWorks from './HowItWorks';
 import FAQ from './FAQ';
 import Footer from './Footer';
 
+const CARDS_PER_PAGE = 3;
+const PAGE_TRANSITION_MS = 350;
+
+/* ── Shimmer keyframe (inline so no external CSS needed) ── */
+const shimmerStyle = (
+  <style>{`
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position:  600px 0; }
+    }
+    .skeleton-shimmer {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+  `}</style>
+);
+
+/* ── SkeletonCard — mirrors the real TestCard layout ── */
+const SkeletonCard = () => (
+  <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    {/* Image area */}
+    <div className="h-48 skeleton-shimmer" />
+    <div className="p-6 space-y-3">
+      {/* Category label */}
+      <div className="h-3 w-1/4 rounded skeleton-shimmer" />
+      {/* Title */}
+      <div className="h-5 w-3/4 rounded skeleton-shimmer" />
+      {/* Description lines */}
+      <div className="h-3 w-full rounded skeleton-shimmer" />
+      <div className="h-3 w-5/6 rounded skeleton-shimmer" />
+      {/* Meta row */}
+      <div className="flex gap-4 pt-1">
+        <div className="h-3 w-20 rounded skeleton-shimmer" />
+        <div className="h-3 w-24 rounded skeleton-shimmer" />
+      </div>
+      {/* Topic pills */}
+      <div className="flex gap-2 pt-1">
+        {[1, 2, 3].map(i => <div key={i} className="h-5 w-14 rounded-full skeleton-shimmer" />)}
+      </div>
+      {/* Button */}
+      <div className="h-9 w-full rounded-lg skeleton-shimmer mt-2" />
+    </div>
+  </div>
+);
+
 const Home = ({ testSeries, onSelectTest, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCourseFamily, setSelectedCourseFamily] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isPageChanging, setIsPageChanging] = useState(false);
   const navigate = useNavigate();
+
+  // Smooth page change with skeleton flash
+  const handlePageChange = (page) => {
+    if (page === currentPage) return;
+    setIsPageChanging(true);
+    setTimeout(() => {
+      setCurrentPage(page);
+      setIsPageChanging(false);
+    }, PAGE_TRANSITION_MS);
+  };
 
   // Strip trailing " - I", " - II", " - 3" etc. to get the course family name
   const getCourseFamilyName = (title) => {
@@ -48,6 +106,21 @@ const Home = ({ testSeries, onSelectTest, user }) => {
   const handleViewDetails = (test) => {
     navigate(`/test/${test.testId}`);
   };
+
+  // Reset to page 1 whenever any filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedCourseFamily, selectedType]);
+
+  // Pagination derived values
+  const totalPages = Math.max(1, Math.ceil(filteredTests.length / CARDS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTests = filteredTests.slice(
+    (safePage - 1) * CARDS_PER_PAGE,
+    safePage * CARDS_PER_PAGE
+  );
+  const rangeStart = filteredTests.length === 0 ? 0 : (safePage - 1) * CARDS_PER_PAGE + 1;
+  const rangeEnd = Math.min(safePage * CARDS_PER_PAGE, filteredTests.length);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -149,34 +222,133 @@ const Home = ({ testSeries, onSelectTest, user }) => {
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">
-            {selectedCategory === 'All' ? 'All Test Series' : `${selectedCategory} Tests`}
+            {selectedCategory === 'All' || selectedCategory === 'All Categories'
+              ? 'All Test Series'
+              : `${selectedCategory} Tests`}
           </h2>
           <p className="text-gray-600 mt-1">
-            {filteredTests.length} test{filteredTests.length !== 1 ? 's' : ''} available
+            {filteredTests.length === 0
+              ? 'No tests available'
+              : `Showing ${rangeStart}–${rangeEnd} of ${filteredTests.length} test${filteredTests.length !== 1 ? 's' : ''}`}
           </p>
         </div>
 
         <div className="flex items-center text-sm text-gray-500">
           <TrendingUp className="w-4 h-4 mr-1" />
-          Sorted by popularity
+          Sorted by name
         </div>
       </div>
 
       {/* Test Cards Grid */}
       {filteredTests.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTests.map(test => (
-            <TestCard
-              key={test.testId}
-              test={test}
-              onSelect={handleViewDetails}
-              user={user}
-            />
-          ))}
-        </div>
+        <>
+          {shimmerStyle}
+
+          {/* Cards grid — real or skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isPageChanging
+              ? Array.from({ length: CARDS_PER_PAGE }).map((_, i) => <SkeletonCard key={i} />)
+              : paginatedTests.map(test => (
+                <TestCard
+                  key={test.testId}
+                  test={test}
+                  onSelect={handleViewDetails}
+                  user={user}
+                />
+              ))
+            }
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (() => {
+            // Build smart page sequence with ellipsis
+            const getPageSequence = () => {
+              if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+              const pages = new Set([1, totalPages, safePage]);
+              if (safePage > 1) pages.add(safePage - 1);
+              if (safePage < totalPages) pages.add(safePage + 1);
+              const sorted = [...pages].sort((a, b) => a - b);
+              const result = [];
+              let prev = null;
+              for (const p of sorted) {
+                if (prev !== null && p - prev > 1) result.push('…');
+                result.push(p);
+                prev = p;
+              }
+              return result;
+            };
+
+            return (
+              <nav
+                aria-label="Course pagination"
+                className="flex justify-center mt-8 pt-6 border-t border-gray-100"
+              >
+                <div className="inline-flex items-center gap-1 bg-white rounded-2xl shadow-md px-4 py-3">
+
+                  {/* Prev chevron */}
+                  <button
+                    onClick={() => handlePageChange(Math.max(1, safePage - 1))}
+                    disabled={safePage === 1 || isPageChanging}
+                    aria-label="Previous page"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg
+                      text-gray-400 hover:text-gray-600 hover:bg-gray-100
+                      disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
+                      transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Page numbers / ellipsis */}
+                  {getPageSequence().map((item, idx) =>
+                    item === '…' ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="w-9 h-9 flex items-center justify-center text-sm text-gray-400 select-none"
+                        aria-hidden="true"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => handlePageChange(item)}
+                        disabled={isPageChanging}
+                        aria-label={`Go to page ${item}`}
+                        aria-current={item === safePage ? 'page' : undefined}
+                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold
+                          transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400
+                          ${item === safePage
+                            ? 'bg-blue-500 text-white shadow-sm'
+                            : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                          }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                  {/* Next chevron */}
+                  <button
+                    onClick={() => handlePageChange(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage === totalPages || isPageChanging}
+                    aria-label="Next page"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg
+                      text-gray-400 bg-gray-100
+                      hover:text-gray-600 hover:bg-gray-200
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                </div>
+              </nav>
+            );
+          })()}
+        </>
       ) : (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
