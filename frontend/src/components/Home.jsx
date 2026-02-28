@@ -10,23 +10,40 @@ import Footer from './Footer';
 const Home = ({ testSeries, onSelectTest, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [selectedCourseFamily, setSelectedCourseFamily] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
   const navigate = useNavigate();
 
+  // Strip trailing " - I", " - II", " - 3" etc. to get the course family name
+  const getCourseFamilyName = (title) => {
+    // Matches " - " followed by Roman numerals (I/V/X combinations) or digits at end of string
+    return title.replace(/\s*-\s*([IVXLCDM]+|\d+)$/i, '').trim();
+  };
+
   const categories = ['All Categories', ...new Set(testSeries.map(test => test.category))];
-  const difficulties = ['All Levels', 'Beginner', 'Intermediate', 'Advanced', 'Expert'];
+
+  // Get unique family names for courses in the selected category
+  const courseFamilies = (() => {
+    const isAllCategories = selectedCategory === 'All' || selectedCategory === 'All Categories';
+    const scopedCourses = isAllCategories
+      ? testSeries
+      : testSeries.filter(t => t.category === selectedCategory);
+    const families = [...new Set(scopedCourses.map(t => getCourseFamilyName(t.title)))];
+    return families.sort((a, b) => a.localeCompare(b));
+  })();
+
   const types = ['Free', 'Paid'];
 
   const filteredTests = testSeries.filter(test => {
     const matchesSearch = test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         test.description.toLowerCase().includes(searchTerm.toLowerCase());
+      test.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || selectedCategory === 'All Categories' || test.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === 'All' || selectedDifficulty === 'All Levels' || test.difficulty === selectedDifficulty;
+    const matchesCourseFamily = selectedCourseFamily === 'All'
+      || getCourseFamilyName(test.title) === selectedCourseFamily;
     const matchesType = selectedType === 'All' || (selectedType === 'Free' && test.type === 'free');
 
-    return matchesSearch && matchesCategory && matchesDifficulty && matchesType;
-  });
+    return matchesSearch && matchesCategory && matchesCourseFamily && matchesType;
+  }).sort((a, b) => a.title.localeCompare(b.title));
 
   const handleViewDetails = (test) => {
     navigate(`/test/${test.testId}`);
@@ -41,7 +58,7 @@ const Home = ({ testSeries, onSelectTest, user }) => {
             Master Programming with Expert Test Series
           </h1>
           <p className="text-xl mb-6 opacity-90">
-            Challenge yourself with carefully crafted tests designed by industry experts. 
+            Challenge yourself with carefully crafted tests designed by industry experts.
             Track your progress and earn certificates.
           </p>
           {!user && (
@@ -97,7 +114,10 @@ const Home = ({ testSeries, onSelectTest, user }) => {
             <div className="flex flex-wrap gap-4 items-center">
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedCourseFamily('All'); // reset 2nd filter on category change
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {categories.map(category => (
@@ -106,12 +126,13 @@ const Home = ({ testSeries, onSelectTest, user }) => {
               </select>
 
               <select
-                value={selectedDifficulty}
-                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                value={selectedCourseFamily}
+                onChange={(e) => setSelectedCourseFamily(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                {difficulties.map(difficulty => (
-                  <option key={difficulty} value={difficulty}>{difficulty}</option>
+                <option value="All">All Courses</option>
+                {courseFamilies.map(family => (
+                  <option key={family} value={family}>{family}</option>
                 ))}
               </select>
 
@@ -137,7 +158,7 @@ const Home = ({ testSeries, onSelectTest, user }) => {
             {filteredTests.length} test{filteredTests.length !== 1 ? 's' : ''} available
           </p>
         </div>
-        
+
         <div className="flex items-center text-sm text-gray-500">
           <TrendingUp className="w-4 h-4 mr-1" />
           Sorted by popularity
