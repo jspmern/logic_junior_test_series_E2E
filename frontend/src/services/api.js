@@ -1,5 +1,17 @@
 const API_URL = 'http://localhost:5000/api';
 
+// ─── JWT helper (no library needed) ─────────────────────────────────────────
+// Decodes the expiry claim from the middle (payload) segment of a JWT.
+// Returns expiry as milliseconds since epoch, or 0 on failure.
+const getJwtExpiry = (token) => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp ? payload.exp * 1000 : 0;
+    } catch {
+        return 0;
+    }
+};
+
 const api = {
     login: async (email, password) => {
         try {
@@ -24,10 +36,11 @@ const api = {
                     avatar: data.data.user.photoUrl || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
                     id: data.data.user._id,
                 };
-                // Store tokens
+                // Store tokens + user object for session persistence
                 if (data.data.accessToken) {
                     localStorage.setItem('accessToken', data.data.accessToken);
                     localStorage.setItem('refreshToken', data.data.refreshToken);
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 return user;
             }
@@ -75,6 +88,37 @@ const api = {
     logout: () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+    },
+
+    // ─── Session restore ────────────────────────────────────────────────────
+    // Returns the stored user object if the refresh token is still valid,
+    // otherwise clears stale storage and returns null.
+    getStoredAuth: () => {
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            const userStr = localStorage.getItem('user');
+
+            if (!refreshToken || !userStr) return null;
+
+            // Use the refresh-token expiry (7 days) as the persistence window.
+            // The access token (15 min) will be re-issued by the backend on the
+            // next authenticated request; the client just needs the user object.
+            const refreshExpiry = getJwtExpiry(refreshToken);
+            if (refreshExpiry === 0 || Date.now() >= refreshExpiry) {
+                // Token expired — wipe everything
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                return null;
+            }
+
+            const user = JSON.parse(userStr);
+            return { user, accessToken, refreshToken };
+        } catch {
+            return null;
+        }
     },
 
     getCategories: async () => {
