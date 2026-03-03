@@ -83,6 +83,12 @@ const sendOtpHandler = async (req, res, next) => {
         // Generate a random 4-digit OTP
         const otp = String(Math.floor(1000 + Math.random() * 9000));
 
+        //logic for sending otp
+        const result = await sendResetPasswordEmail(email, null, otp);
+        
+
+
+
         // Upsert: create or replace the OTP record, reset createdAt for TTL
         await EmailOtp.findOneAndUpdate(
             { email: email.toLowerCase() },
