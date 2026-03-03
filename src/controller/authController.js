@@ -13,7 +13,7 @@ const {
     generateTokens,
     generateResetToken,
 } = require("../utilis/authUtilis");
-const { sendResetPasswordEmail } = require("../utilis/emailutils");
+const { sendOtpEmail, sendPasswordResetEmail } = require("../utilis/emailutils");
 const client = require('../config/OAuth2');
 
 const redirectToGoogle = (req, res) => {
@@ -83,22 +83,30 @@ const sendOtpHandler = async (req, res, next) => {
         // Generate a random 4-digit OTP
         const otp = String(Math.floor(1000 + Math.random() * 9000));
 
-        //logic for sending otp
-        const result = await sendResetPasswordEmail(email, null, otp);
-        
+        // Step 1: Try sending email FIRST — do NOT touch DB if this fails
+        let result;
+        try {
+            result = await sendOtpEmail(email, otp);
+            console.log("[OTP] Email send result:", result);
+        } catch (emailErr) {
+            console.error("[OTP] Email send failed:", emailErr);
+            return res.status(500).json({ success: false, message: "Failed to send OTP email. Please check the email address and try again." });
+        }
 
+        // Step 2: Verify SMTP actually accepted the address (catches invalid/rejected emails)
+        if (!result?.accepted?.includes(email)) {
+            console.warn("[OTP] Email rejected by SMTP:", email, result?.rejected);
+            return res.status(400).json({ success: false, message: "Email address could not be reached. Please enter a valid email." });
+        }
 
-
-        // Upsert: create or replace the OTP record, reset createdAt for TTL
+        // Step 3: Email confirmed — now safe to write OTP to DB
         await EmailOtp.findOneAndUpdate(
             { email: email.toLowerCase() },
             { otp, createdAt: new Date() },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
-        // TODO: Send actual email once email service is configured
-        console.log(`[OTP] Email: ${email} | OTP: ${otp}`);
-
+        console.log(`[OTP] Saved to DB. Email: ${email}`);
         return res.status(200).json({ success: true, message: "OTP sent successfully" });
     } catch (err) {
         return next(err);
@@ -230,16 +238,17 @@ const forgetPasswordHandler = async (req, res, next) => {
         if (!foundUser) {
             return res.status(200).json({
                 success: true,
+                isExisting: false,
                 message: "If an account exists, you will receive a password reset link shortly."
             });
         }
 
-        if (foundUser.isGoogle) {
-            return res.status(200).json({
-                success: true,
-                message: "If an account exists, you will receive a password reset link shortly."
-            });
-        }
+        // if (foundUser.isGoogle) {
+        //     return res.status(200).json({
+        //         success: true,
+        //         message: "If an account exists, you will receive a password reset link shortly."
+        //     });
+        // }
 
         // Generate reset token
         const { token, hashedToken, expiresAt } = generateResetToken();
@@ -252,9 +261,10 @@ const forgetPasswordHandler = async (req, res, next) => {
         const resetLink = `${baseUrl}/test/reset-password?token=${token}&email=${encodeURIComponent(foundUser.email)}`;
 
         try {
-            await sendResetPasswordEmail(foundUser.email, resetLink);
+            await sendPasswordResetEmail(foundUser.email, resetLink);
             return res.status(200).json({
                 success: true,
+                isExisting: true,
                 message: "If an account exists, you will receive a password reset link shortly."
             });
         } catch (emailError) {

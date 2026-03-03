@@ -37,6 +37,7 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
   // Forgot Password
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotEmailNotFound, setForgotEmailNotFound] = useState(false);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -190,6 +191,7 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
     setActiveTab(tab);
     setError('');
     setForgotSuccess(false);
+    setForgotEmailNotFound(false);
   };
 
   const handleGoogleLogin = () => {
@@ -256,10 +258,17 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError('');
+    setForgotEmailNotFound(false);
     setLoading(true);
     try {
-      await api.forgotPassword(forgotEmail);
-      setForgotSuccess(true);
+      const data = await api.forgotPassword(forgotEmail);
+      // Backend returns isExisting: false when no account matches the email.
+      // We surface this explicitly so the user knows to check their address.
+      if (data.isExisting === false) {
+        setForgotEmailNotFound(true);
+      } else {
+        setForgotSuccess(true);
+      }
     } catch (err) {
       setError(err.message || 'Failed to send reset email');
     } finally {
@@ -405,8 +414,8 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
                     required
                     disabled={emailVerified}
                     className={`w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${emailVerified
-                        ? 'border-green-400 bg-green-50 text-green-700'
-                        : 'border-blue-300'
+                      ? 'border-green-400 bg-green-50 text-green-700'
+                      : 'border-blue-300'
                       }`}
                   />
                 </div>
@@ -455,10 +464,10 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                         onPaste={idx === 0 ? handleOtpPaste : undefined}
                         className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${otpError
-                            ? 'border-red-400 bg-red-50 text-red-600'
-                            : val
-                              ? 'border-blue-500 bg-white text-blue-700'
-                              : 'border-gray-300 bg-white text-gray-800'
+                          ? 'border-red-400 bg-red-50 text-red-600'
+                          : val
+                            ? 'border-blue-500 bg-white text-blue-700'
+                            : 'border-gray-300 bg-white text-gray-800'
                           }`}
                       />
                     ))}
@@ -543,7 +552,6 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
             </form>
           )}
 
-          {/* ─── Forgot Password ─── */}
           {activeTab === 'forgot' && (
             <div>
               <button
@@ -559,24 +567,58 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
                 Enter your registered email and we'll send you a reset link.
               </p>
 
-              {forgotSuccess ? (
+              {/* ── Email not found ── */}
+              {forgotEmailNotFound ? (
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
+                    <Mail className="w-7 h-7 text-red-500" />
+                  </div>
+                  <p className="font-semibold text-gray-800">No account found</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    There is no LogicJunior account associated with{' '}
+                    <span className="font-medium text-gray-700">{forgotEmail}</span>.
+                    Please check the email address or create a new account.
+                  </p>
+                  <div className="flex gap-3 mt-5">
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmailNotFound(false); setForgotEmail(''); }}
+                      className="text-sm px-4 py-2 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                    >
+                      Try another email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchTab('signup')}
+                      className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Create account
+                    </button>
+                  </div>
+                </div>
+
+              ) : forgotSuccess ? (
+                /* ── Email sent successfully ── */
                 <div className="flex flex-col items-center text-center py-4">
                   <CheckCircle className="w-12 h-12 text-green-500 mb-3" />
                   <p className="font-semibold text-gray-800">Check your inbox!</p>
                   <p className="text-sm text-gray-500 mt-2">
-                    If an account exists for <span className="font-medium text-gray-700">{forgotEmail}</span>,
-                    you will receive a password reset link shortly.
+                    A password reset link has been sent to{' '}
+                    <span className="font-medium text-gray-700">{forgotEmail}</span>.
+                    It expires in 15 minutes.
                   </p>
                   <p className="text-xs text-gray-400 mt-3">Check your spam folder if you don't see it.</p>
                   <button
                     type="button"
-                    onClick={() => { setForgotSuccess(false); setForgotEmail(''); setError(''); }}
+                    onClick={() => { setForgotSuccess(false); setForgotEmailNotFound(false); setForgotEmail(''); setError(''); }}
                     className="mt-4 text-sm text-blue-600 hover:underline"
                   >
                     Try a different email
                   </button>
                 </div>
+
               ) : (
+                /* ── Form ── */
                 <form onSubmit={handleForgotPassword} className="space-y-3">
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -584,7 +626,7 @@ const LoginModal = ({ onLogin, onClose, onRegister }) => {
                       type="email"
                       required
                       value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
+                      onChange={(e) => { setForgotEmail(e.target.value); setForgotEmailNotFound(false); }}
                       placeholder="Email address"
                       className="w-full pl-9 pr-4 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
