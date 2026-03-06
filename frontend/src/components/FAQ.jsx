@@ -32,7 +32,7 @@ const FAQ = () => {
   ];
 
   return (
-    <section className="py-16 bg-green-50">
+    <section id="faq-section" className="py-16 bg-green-50">
       <div className="max-w-3xl mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -57,9 +57,8 @@ const FAQ = () => {
                   {faq.question}
                 </span>
                 <ChevronDown
-                  className={`w-5 h-5 text-gray-600 flex-shrink-0 transition-transform duration-200 ${
-                    openIndex === index ? 'transform rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 text-gray-600 flex-shrink-0 transition-transform duration-200 ${openIndex === index ? 'transform rotate-180' : ''
+                    }`}
                 />
               </button>
 
