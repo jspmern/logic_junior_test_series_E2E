@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import TestDetails from './components/TestDetails';
@@ -12,6 +12,13 @@ import ResetPassword from './components/ResetPassword';
 import SessionTimeoutModal from './components/SessionTimeoutModal';
 
 import api from './services/api';
+
+// Scrolls to top on every route change — fixes content loading under the fixed navbar
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+};
 
 // ─── Idle-timeout constants ───────────────────────────────────────────────────
 const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours of inactivity → logout
@@ -237,38 +244,50 @@ function App() {
   return (
     <Router basename="/test">
       <div className="min-h-screen bg-gray-50">
+        <ScrollToTop />
         <Navbar user={user} onLogout={handleLogout} onLogin={() => setShowLoginModal(true)} />
-        <Routes>
-          <Route
-            path="/"
-            element={<Home testSeries={testSeries} onSelectTest={handleSelectTest} />}
-          />
-          <Route
-            path="/test/:id"
-            element={<TestDetails testSeries={testSeries} user={user} onStartTest={handleStartTest} />}
-          />
-          <Route
-            path="/test/:id/start"
-            element={user ? <TestInterface testSeries={testSeries} user={user} /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/test/:id/results"
-            element={user ? <TestResults /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/dashboard"
-            element={user ? <UserDashboard user={user} testSeries={testSeries} /> : <Navigate to="/" replace />}
-          />
-          {user && user.role === 'admin' && (
+        {/* pt-16 = 64px offset for the fixed navbar — applies to all pages */}
+        <main className="pt-16">
+          <Routes>
             <Route
-              path="/admin"
-              element={<AdminDashboard testSeries={testSeries} setTestSeries={setTestSeries} />}
+              path="/"
+              element={
+                <Home
+                  testSeries={testSeries}
+                  onSelectTest={handleSelectTest}
+                  user={user}
+                  onLogin={() => setShowLoginModal(true)}
+                  heroImage="https://images.unsplash.com/photo-1635372722656-389f87a941b7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2FsY3VsdXN8ZW58MHx8MHx8fDA%3D"
+                />
+              }
             />
-          )}
-          {/* Public route — token in URL acts as the credential */}
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route
+              path="/test/:id"
+              element={<TestDetails testSeries={testSeries} user={user} onStartTest={handleStartTest} />}
+            />
+            <Route
+              path="/test/:id/start"
+              element={user ? <TestInterface testSeries={testSeries} user={user} /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/test/:id/results"
+              element={user ? <TestResults /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/dashboard"
+              element={user ? <UserDashboard user={user} testSeries={testSeries} /> : <Navigate to="/" replace />}
+            />
+            {user && user.role === 'admin' && (
+              <Route
+                path="/admin"
+                element={<AdminDashboard testSeries={testSeries} setTestSeries={setTestSeries} />}
+              />
+            )}
+            {/* Public route — token in URL acts as the credential */}
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
 
         {/* Login modal */}
         {showLoginModal && (

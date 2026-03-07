@@ -210,8 +210,8 @@ const TestInterface = ({ testSeries, user }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header — sticky so timer/progress always visible */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-20">
+      {/* Header — sticky so timer/progress always visible, top-16 clears the fixed navbar */}
+      <div className="bg-white shadow-sm border-b sticky top-16 z-20">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -262,7 +262,7 @@ const TestInterface = ({ testSeries, user }) => {
           <div className="lg:col-span-3">
             {/* Card is a flex column — QuestionCard scrolls, nav buttons stay pinned */}
             <div className="bg-white rounded-xl shadow-sm border p-8 flex flex-col"
-              style={{ maxHeight: 'calc(100vh - 11rem)' }}>
+              style={{ maxHeight: 'calc(100vh - 15rem)' }}>
 
               {/* Scrollable question area */}
               <div className="flex-1 overflow-y-auto min-h-0 pr-1">
@@ -300,7 +300,7 @@ const TestInterface = ({ testSeries, user }) => {
 
           {/* Question Navigation Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border p-6 sticky top-8">
+            <div className="bg-white rounded-xl shadow-sm border p-6 sticky top-24">
               <h3 className="font-semibold text-gray-900 mb-4">Question Navigation</h3>
 
               <div className="grid grid-cols-5 gap-2 mb-6">
