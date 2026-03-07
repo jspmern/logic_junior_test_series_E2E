@@ -62,6 +62,13 @@ function App() {
     setUser(null);
   }, []);
 
+  // ─── auth:expired — fired by api.js interceptor on 401 response ────────────
+  useEffect(() => {
+    const handleAuthExpired = () => doLogout();
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+  }, [doLogout]);
+
   // ─── Start countdown interval (timestamp-aware) ────────────────────────────
   // Instead of decrementing a counter we compute remaining seconds from the
   // real wall-clock timestamp, so browser timer throttling can't skew values.
