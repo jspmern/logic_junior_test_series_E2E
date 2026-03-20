@@ -364,7 +364,10 @@ const Home = ({ testSeries, onSelectTest, user, onLogin, heroImage }) => {
               <button
                 onClick={() => {
                   const section = document.getElementById('test-series-section');
-                  if (section) section.scrollIntoView({ behavior: 'smooth' });
+                  if (section) {
+                    const top = section.getBoundingClientRect().top + window.scrollY - 64;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                  }
                 }}
                 className="relative flex items-center gap-2 px-7 py-3.5 rounded-2xl text-base font-bold text-white bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 shadow-xl shadow-blue-700/40 hover:shadow-blue-600/60 transition-all duration-300 overflow-hidden group"
               >

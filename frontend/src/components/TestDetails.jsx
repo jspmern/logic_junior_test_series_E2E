@@ -233,7 +233,10 @@ const TestDetails = ({ testSeries, user, onStartTest }) => {
                 onClick={() => {
                   navigate('/'); setTimeout(() => {
                     const el = document.getElementById('test-series-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    if (el) {
+                      const top = el.getBoundingClientRect().top + window.scrollY - 64;
+                      window.scrollTo({ top, behavior: 'smooth' });
+                    }
                   }, 80);
                 }}
                 className="hover:text-blue-600 transition-colors"
